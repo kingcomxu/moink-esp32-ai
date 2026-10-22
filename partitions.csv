@@ -1,0 +1,20 @@
+# Name,   Type, SubType, Offset,   Size,     Flags
+# NOTE: must stay plain ASCII without a UTF-8 BOM (partition parser aborts on BOM).
+#
+# MoInk R1.4.0 布局（4 MB flash）—— 与 C3 版 R1.3.x **完全一致**，
+#   所以两版固件可以互相 OTA（只要编译目标芯片对得上，见 ota_web.c 的 chip_id 校验）。
+#   nvs      设置 + 页面热更标记
+#   otadata  OTA 槽选择 / 回滚状态
+#   ota_0/1  双 OTA 槽，各 1.25 MB（app 体积约 1.0 MB，余量 ~25%）
+#   web      控制页热更分区 384 KB（页面约 170 KB，2 倍以上余量）
+#   store    轮播原始帧存储 1.0625 MB（8 槽 x 128 KB）
+#   ★ 分区表只能靠整包线刷改写：从没有 store 分区的旧版本 OTA 上来时，
+#     store.c 会告警并报 store_slots=0，其余功能不受影响。
+#   ★ 不要在代码里硬编码分区尺寸，运行时一律用 esp_partition_* 读。
+nvs,      data, nvs,     0x9000,   0x4000,
+otadata,  data, ota,     0xd000,   0x2000,
+phy,      data, phy,     0xf000,   0x1000,
+ota_0,    app,  ota_0,   0x10000,  0x140000,
+ota_1,    app,  ota_1,   0x150000, 0x140000,
+web,      data, spiffs,  0x290000, 0x60000,
+store,    data, spiffs,  0x2f0000, 0x110000,

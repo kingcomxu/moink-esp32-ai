@@ -1,0 +1,53 @@
+# 墨印 MoInk (R1.4.0) sdkconfig defaults — ESP32 经典款（WROOM-32 / DevKitC）
+#
+# 与 C3 版的差异：
+#   - 控制台走 UART0（GPIO1/3）而不是 USB-Serial-JTAG —— ESP32 没有那个外设；
+#   - 主任务栈给到 4 KB（ESP32 默认 3584，httpd 起服务时略紧）；
+#   - 不开 UNICORE：ESP32 双核，WiFi 任务跑在核 0，应用任务留在核 0/1 均可。
+#
+# 生产配置：日志降级到 Error、深睡唤醒跳过镜像校验、上电校验保留。
+# 排障时把 LOG 两行改回 INFO/Debug 即可（不要动 eFuse 级选项）。
+
+# ---- flash 尺寸与模式（4 MB / DIO / 40M，最通用的一档）----
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+CONFIG_ESPTOOLPY_FLASHMODE_DIO=y
+CONFIG_ESPTOOLPY_FLASHFREQ_40M=y
+
+# ---- 控制台：UART0 @115200 ----
+CONFIG_ESP_CONSOLE_UART_DEFAULT=y
+CONFIG_ESP_CONSOLE_UART_BAUDRATE=115200
+CONFIG_ESP_CONSOLE_SECONDARY_NONE=y
+
+# ---- 日志：生产降级 Error（排障改回 INFO）----
+CONFIG_LOG_DEFAULT_LEVEL_ERROR=y
+CONFIG_LOG_DEFAULT_LEVEL=1
+
+CONFIG_COMPILER_OPTIMIZATION_SIZE=y
+
+# ---- WiFi 仅 SoftAP（无 STA）；缓冲池保持 IDF 默认（不要为了省内存去砍）----
+CONFIG_ESP_WIFI_ENABLED=y
+
+# ---- captive portal：Espressif 官方示例使用 16 个 lwIP socket，HTTPD 可用 13 个 ----
+CONFIG_LWIP_MAX_SOCKETS=16
+
+# ---- 自定义分区表：双 OTA(1.25MB×2) + 384KB 页面 + 1.0625MB 轮播存储 ----
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+
+# ---- OTA 回滚 ----
+CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y
+
+# ---- 启动提速（深睡唤醒跳过二次镜像校验；上电仍保留完整校验）----
+CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP=y
+CONFIG_BOOTLOADER_LOG_LEVEL_ERROR=y
+CONFIG_BOOTLOADER_LOG_LEVEL=1
+
+# ---- 定时唤醒精度：RTC 慢时钟为内部 RC，校准周期保持 1024（勿置 0）----
+CONFIG_RTC_CLK_SRC_INT_RC=y
+CONFIG_RTC_CLK_CAL_CYCLES=1024
+
+# ---- 主任务栈 4 KB（app_main 里要起 netif / httpd / 一堆任务）----
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=4096
+
+# Bluetooth/BLE：刻意不启用（会吃光堆并拖垮 SoftAP）。
+# CONFIG_BT_ENABLED is not set
